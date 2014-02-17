@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/syntax/operators</file>
+        <file>resources/syntax/quotations</file>
+        <file>resources/syntax/keywords/c</file>
+        <file>resources/syntax/keywords/css</file>
+        <file>resources/syntax/keywords/java</file>
+        <file>resources/syntax/keywords/python</file>
+        <file>resources/syntax/keywords/html</file>
+        <file>resources/syntax/keywords/vala</file>
+        <file>resources/syntax/keywords/vb</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,75 @@
+QMainWindow {
+    background-color: #FAFAFB;
+}
+
+QTabWidget {
+    border: none;
+}
+
+QTabWidget::tab-bar {
+    alignment: left;
+}
+
+TextEditor {
+	border: none;
+}
+
+#tabs::pane {
+    background-color: #fff;
+	border: none;
+    border-top: 1px solid #D1D1D4;
+}
+
+#tree {
+    border: none;
+    outline: 0;
+}
+
+QTabWidget {
+    border: none;
+}
+
+#tabs QTabBar::tab:selected {
+    padding: 8px 12px;
+    background-color: #fff;
+    border-color: transparent #D1D1D4;
+    border-style: solid;
+    border-width: 1px;
+}
+
+#statusBar {
+    border-top: 1px solid #D1D1D4;
+}
+
+#split {
+    width: 4px;
+    border: none;
+}
+
+#split::handle {
+	image: none;
+	background-color: #f1f1f1;
+	border-style: solid;
+	border-width: 0 1px;
+    border-color: #D1D1D4;
+}
+
+#sidebarTabs::pane {
+	border: none;
+}
+
+#sidebarTabs QTabBar::tab {
+	padding: 6px 4px;
+}
+
+#sidebarTabs QTabBar::tab:selected {
+	background-color: #f1f1f1;
+}
+
+#sidebarTabs QTabBar::tab:hover {
+	background-color: #c1c1c1;
+}
+
+#sidebarTabs QTabBar::tab {
+    border: none;
+}

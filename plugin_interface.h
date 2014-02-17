@@ -1,0 +1,4 @@
+#ifndef PLUGIN_INTERFACE_H
+#define PLUGIN_INTERFACE_H
+
+#endif // PLUGIN_INTERFACE_H

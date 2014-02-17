@@ -1,0 +1,60 @@
+qwe
+
+QPushButton {
+    background-color: #2B303B;
+    border: 0;
+    color: #fff;
+    padding: 4px 8px;
+}
+
+QTreeView {
+    background-color: #2B303B;
+    outline: 0;
+}
+
+QPlainTextEdit {
+    border: 0;
+    background-color: #2B303B;
+    color: #fff;
+    font-family: "Monaco";
+    font-size: 12px;
+}
+
+QTabBar {
+    width: 100%;
+    background-color: #2B303B;
+    border: 0;
+}
+
+QTabBar::tab {
+    background-color: #222830;
+    border-style: none;
+    padding: 8px 12px;
+    color: #888;
+    max-width: 100px;
+}
+
+QTabBar::tab:selected {
+    background-color: #2B303B;
+    color: #fff;
+}
+
+QTabBar::tab:hover {
+    background-color: #222830;
+}
+
+QTabWidget::tab-bar {
+    alignment: left;
+}
+
+QTabBar::close-button {
+    subcontrol-position: right center;
+    subcontrol-origin: padding;
+}
+
+QTabWidget::pane {
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
