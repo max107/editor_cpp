@@ -3,6 +3,8 @@ moc_*
 *.app
 *.exe
 
+test.cpp
+
 # Compiled Object files
 *.slo
 *.lo

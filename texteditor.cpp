@@ -18,7 +18,7 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
     End = 0;
 
     // Setup autocomplete
-    minCompleterLength = 2;
+    minCompleterLength = 1;
 }
 
 bool TextEditor::closeDocument()
