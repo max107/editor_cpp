@@ -3,6 +3,10 @@
 
 #include "math.h"
 
+#include <iostream>
+#include <string>
+#include <algorithm>
+
 #include <QDebug>
 #include <QApplication>
 

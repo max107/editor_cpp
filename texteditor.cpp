@@ -19,15 +19,6 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
 
     // Setup autocomplete
     minCompleterLength = 2;
-
-    c = new QCompleter(this);
-    c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
-    c->setWidget(this);
-    c->setCompletionMode(QCompleter::PopupCompletion);
-    c->setCaseSensitivity(Qt::CaseInsensitive);
-    c->setWrapAround(false);
-
-    QObject::connect(c, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
 }
 
 bool TextEditor::closeDocument()
@@ -78,7 +69,6 @@ bool TextEditor::closeDocument()
 }
 
 bool TextEditor::MaybeSave() {
-    qDebug() << document()->isModified();
     if (document()->isModified()) {
         if (Filename.isEmpty()) {
             int Return;
@@ -131,7 +121,15 @@ void TextEditor::OpenFile(const QString FileLocation) {
             InputFile.setCodec("UTF-8");
             setPlainText(InputFile.readAll());
 
+            c = new QCompleter(this);
+//            c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
             c->setModel(new QStringListModel(getWords(), c));
+            c->setCompletionMode(QCompleter::PopupCompletion);
+            c->setCaseSensitivity(Qt::CaseInsensitive);
+            c->setWrapAround(false);
+            c->setWidget(this);
+
+            QObject::connect(c, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
 
             File.close();
             Filename = FileLocation;
@@ -193,15 +191,7 @@ bool TextEditor::SaveFile(const QString FileLocation) {
 
 void TextEditor::setTabSize(const int tabStop)
 {
-    // TODO
-    QFont font;
-    font.setFamily("Monaco");
-    font.setStyleHint(QFont::Monospace);
-    font.setFixedPitch(true);
-    font.setPointSize(12);
-    setFont(font);
-
-    QFontMetrics metrics(font);
+    QFontMetrics metrics(font());
     setTabStopWidth(tabStop * metrics.width(' '));
 }
 
@@ -277,8 +267,6 @@ void TextEditor::UpdateDocumentStatus() {
     QString LengthString    = Shared::Length + ": " + CalculateSize();
     QString LineCountString = Shared::Lines  + ": " + QString::number(document()->blockCount());
     QString WordCountString = Shared::Words  + ": " + QString::number(CountWords());
-
-    qDebug() << LengthString + "    " + WordCountString + "    " + LineCountString;
 }
 
 void TextEditor::keyPressEvent(QKeyEvent *e) {
@@ -308,8 +296,7 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
     static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
     bool hasModifier = (e->modifiers() != Qt::NoModifier) && !ctrlOrShift;
     QString completionPrefix = textUnderCursor();
-
-    if (!isShortcut && (hasModifier || e->text().isEmpty()|| completionPrefix.length() < minCompleterLength
+    if (!isShortcut && (hasModifier || e->text().isEmpty() || completionPrefix.length() < minCompleterLength
                       || eow.contains(e->text().right(1)))) {
         c->popup()->hide();
         return;
@@ -320,10 +307,8 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
         c->popup()->setCurrentIndex(c->completionModel()->index(0, 0));
     }
     QRect cr = cursorRect();
-    cr.setWidth(c->popup()->sizeHintForColumn(0)
-                + c->popup()->verticalScrollBar()->sizeHint().width());
+    cr.setWidth(c->popup()->sizeHintForColumn(0) + c->popup()->verticalScrollBar()->sizeHint().width());
     c->complete(cr); // popup it up!
-
 
 //    QString DocumentTitle = documentTitle();
 
@@ -365,13 +350,26 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
     // setDocumentTitle(DocumentTitle);
 }
 
+std::string ReplaceString(std::string subject, const std::string& search,
+                          const std::string& replace) {
+    size_t pos = 0;
+    while((pos = subject.find(search, pos)) != std::string::npos) {
+         subject.replace(pos, search.length(), replace);
+         pos += replace.length();
+    }
+    return subject;
+}
+
 QStringList TextEditor::getWords()
 {
-//    qDebug() << toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts);
-//    return toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts);
-    QStringList words;
-    words << "simple" << "test";
-    return words;
+    QString text = toPlainText();
+
+    char chars[] = "#.,!()[]'<>:/{}_|=+;`";
+    for (unsigned int i = 0; i < strlen(chars); ++i) {
+        text = text.replace(chars[i], " ");
+    }
+
+    return text.split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts).toSet().toList();
 }
 
 void TextEditor::insertCompletion(const QString& completion)
