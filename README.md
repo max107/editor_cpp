@@ -1,2 +1,14 @@
-editor_cpp
-==========
+Requirements
+============
+
+```
+Qt 5+
+```
+
+Build
+=====
+
+```
+qmake
+make
+```
