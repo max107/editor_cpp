@@ -1,1 +1,363 @@
-asdf asd
+#include "texteditor.h"
+
+TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
+    connect(this, SIGNAL(textChanged()),            this, SLOT(UpdateDocumentStatus()));
+
+    LineCountArea = new LineNumberArea(this);
+    connect(this, SIGNAL(blockCountChanged(int)),   this, SLOT(UpdateLineNumberAreaWidth(int)));
+    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(UpdateLineNumberArea(QRect,int)));
+    UpdateLineNumberAreaWidth(0);
+
+    connect(this, SIGNAL(cursorPositionChanged()),  this, SLOT(Highlight_Current_Line()));
+
+    setTabSize(4);
+
+    Size = 0;
+    Counter = 0;
+    Start = 0;
+    End = 0;
+
+    // Setup completer
+    completer = new QCompleter(this);
+    completer->setWidget(this);
+    completer->setCompletionMode(QCompleter::PopupCompletion);
+
+    connect(completer, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
+}
+
+bool TextEditor::closeDocument()
+{
+    if (document()->isModified()) {
+        if (Filename.isEmpty()) {
+            int Return;
+            setDocumentTitle(Shared::Untitled + QString::number(documentNumber));
+
+            QMessageBox MessageBox;
+            MessageBox.setText(Shared::SaveChangesToDocument.arg(documentTitle()));
+            MessageBox.setInformativeText(Shared::YourChangesWillBeLost);
+            MessageBox.setWindowTitle(" ");
+            MessageBox.setIconPixmap(QPixmap(":/Icons/Resources/Icons/48x48/TextpadEditor.png"));
+            MessageBox.setStandardButtons(QMessageBox::Discard | QMessageBox::Cancel | QMessageBox::Save);
+            Return = MessageBox.exec();
+
+            if (Return == QMessageBox::Cancel) {
+                return false;
+            } else if (Return == QMessageBox::Save) {
+                return Save();
+            } else {
+                return true;
+            }
+        } else {
+            int Return;
+            setDocumentTitle(Shared::Untitled + QString::number(documentNumber));
+
+            QMessageBox MessageBox;
+            MessageBox.setText(Shared::SaveChangesToDocument.arg(documentTitle()));
+            MessageBox.setInformativeText(Shared::YourChangesWillBeLost);
+            MessageBox.setWindowTitle(" ");
+            MessageBox.setIconPixmap(QPixmap(":/Icons/Resources/Icons/48x48/TextpadEditor.png"));
+            MessageBox.setStandardButtons(QMessageBox::Discard | QMessageBox::Cancel | QMessageBox::Save);
+            Return = MessageBox.exec();
+
+            if (Return == QMessageBox::Cancel) {
+                return false;
+            } else if (Return == QMessageBox::Save) {
+                return Save();
+            } else {
+                return true;
+            }
+        }
+    } else {
+        return true;
+    }
+}
+
+bool TextEditor::MaybeSave() {
+    qDebug() << document()->isModified();
+    if (document()->isModified()) {
+        if (Filename.isEmpty()) {
+            int Return;
+            setDocumentTitle(Shared::Untitled + QString::number(documentNumber));
+
+            QMessageBox MessageBox;
+            MessageBox.setText(Shared::SaveChangesToDocument.arg(documentTitle()));
+            MessageBox.setInformativeText(Shared::YourChangesWillBeLost);
+            MessageBox.setWindowTitle(" ");
+            MessageBox.setIconPixmap(QPixmap(":/Icons/Resources/Icons/48x48/TextpadEditor.png"));
+            MessageBox.setStandardButtons(QMessageBox::Discard | QMessageBox::Cancel | QMessageBox::Save);
+            Return = MessageBox.exec();
+
+            if      (Return == QMessageBox::Cancel)  return false;
+            else if (Return == QMessageBox::Save)    return Save();
+        }
+
+        else
+            if (toPlainText().isEmpty()) {
+                int Return;
+
+                QMessageBox MessageBox;
+                MessageBox.setText(Shared::AreYouSure);
+                MessageBox.setInformativeText(Shared::YouErasedAllContent);
+                MessageBox.setWindowTitle(" ");
+                MessageBox.setIconPixmap(QPixmap(":/Icons/Resources/Icons/48x48/TextpadEditor.png"));
+                MessageBox.setStandardButtons(QMessageBox::Discard | QMessageBox::Cancel | QMessageBox::Save);
+                MessageBox.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+                Return = MessageBox.exec();
+
+                if (Return == QMessageBox::Cancel)
+                    return false;
+                if (Return == QMessageBox::Discard)
+                    return true;
+            }
+
+            else
+                return Save();
+    }
+    return true;
+}
+
+void TextEditor::OpenFile(const QString FileLocation) {
+    qApp->setOverrideCursor(Qt::WaitCursor);
+    if  (!FileLocation.isEmpty()) {
+        QFile File(FileLocation);
+
+        if (File.open(QFile::ReadOnly | QFile::WriteOnly | QFile::ReadWrite)) {
+            QTextStream InputFile(&File);
+            InputFile.setCodec("UTF-8");
+            setPlainText(InputFile.readAll());
+            File.close();
+            Filename = FileLocation;
+            SetupFile();
+
+            qApp->restoreOverrideCursor();
+            return;
+        }
+
+        QMessageBox::warning(this, Shared::Error,
+                             Shared::CannotReadFile.arg(FileLocation).arg(File.errorString()));
+
+        qApp->restoreOverrideCursor();
+        return;
+    }
+    qApp->restoreOverrideCursor();
+}
+
+void TextEditor::SetupFile()
+{
+    document()->setModified(false);
+    HighlightByExtension();
+
+    setDocumentTitle(QFileInfo(Filename).fileName());
+    // requestUpdateTitle();
+}
+
+bool TextEditor::Save() {
+    if (Filename.isEmpty()) {
+        return SaveAs();
+    } else if (!Filename.isEmpty()) {
+        return SaveFile(Filename);
+    }
+    return false;
+}
+
+bool TextEditor::SaveAs() {
+    return SaveFile(QFileDialog::getSaveFileName(this, Shared::SaveAs, QDir::homePath()));
+}
+
+bool TextEditor::SaveFile(const QString FileLocation) {
+    if  (!FileLocation.isEmpty()) {
+        QFile File(FileLocation);
+        if (File.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            qApp->setOverrideCursor(Qt::WaitCursor);
+            File.write(document()->toPlainText().toUtf8());
+            File.close();
+            Filename = File.fileName();
+            SetupFile();
+            qApp->restoreOverrideCursor();
+            return true;
+        }
+
+        QMessageBox::warning(this, Shared::Error,
+                             Shared::CannotWriteFile.arg(FileLocation).arg(File.errorString()));
+    }
+    return false;
+}
+
+void TextEditor::setTabSize(const int tabStop)
+{
+    // TODO
+    QFont font;
+    font.setFamily("Monaco");
+    font.setStyleHint(QFont::Monospace);
+    font.setFixedPitch(true);
+    font.setPointSize(12);
+    setFont(font);
+
+    QFontMetrics metrics(font);
+    setTabStopWidth(tabStop * metrics.width(' '));
+}
+
+int TextEditor::CountWords() {
+    // This is a very precise way of counting words, but it can consume lot of CPU and RAM on large files
+    if (toPlainText().length() > 10000) {
+        return toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts).count();
+    }
+
+    // This method is not very precise, but it does not consume too much CPU and RAM
+    {
+        QString text = toPlainText();
+        if (text.length() < Size) {
+            Size = 0;
+            Counter = 0;
+            Start = 0;
+            End = 0;
+        }
+
+        if (text.length() - Size == 1) {
+            if (text.length() == 1) {
+                if(!text.at(0).isSpace()) {
+                    Counter++;
+                }
+            }
+
+            if (text.length() > 2) {
+                Start = text.length() - 1;
+                End = text.length();
+
+                if (text.at(Start - 1).isSpace() && !text.at(End - 1).isSpace()) {
+                    Counter++;
+                }
+            }
+        } else if (text.length() - Size > 1) {
+            Counter = 0;
+            if (!text.at(0).isSpace()) {
+                Counter++;
+            }
+
+            for (int i = 1; i < text.length(); i++) {
+                if(!text.at(i).isSpace() && text.at(i-1).isSpace()) {
+                    Counter++;
+                }
+            }
+        }
+
+        Size = text.length();
+        return Counter;
+    }
+}
+
+QString TextEditor::CalculateSize() {
+    float Length = toPlainText().length();
+    QString UnitString;
+
+    if  ((Length >= 0) & (Length < 1024)) {
+        UnitString = " bytes";
+    } else if  ((Length > 1024) & (Length < 1048576)) {
+        Length /= 1024;
+        UnitString = " KB";
+    } else if  ((Length > 1048576)) {
+        Length /= 1048576;
+        UnitString = " MB";
+    }
+
+    float RoundedLength = floorf(Length * 100 + 0.5) / 100;
+
+    return QString::number(RoundedLength) + UnitString;
+}
+
+void TextEditor::UpdateDocumentStatus() {
+    completer->setModel(new QStringListModel(getWords(), completer));
+
+    QString LengthString    = Shared::Length + ": " + CalculateSize();
+    QString LineCountString = Shared::Lines  + ": " + QString::number(document()->blockCount());
+    QString WordCountString = Shared::Words  + ": " + QString::number(CountWords());
+
+    qDebug() << LengthString + "    " + WordCountString + "    " + LineCountString;
+}
+
+void TextEditor::keyPressEvent(QKeyEvent *e) {
+    if (completer->popup()->isVisible()) {
+        switch (e->key()) {
+            case Qt::Key_Enter:
+            case Qt::Key_Return:
+            case Qt::Key_Escape:
+            case Qt::Key_Tab:
+                e->ignore();
+                return;
+        }
+    }
+
+    // QTextEdit::keyPressEvent(event);
+
+    const QString completionPrefix = textUnderCursor();
+
+    if (completionPrefix != completer->completionPrefix()) {
+        completer->setCompletionPrefix(completionPrefix);
+        completer->popup()->setCurrentIndex(completer->completionModel()->index(0, 0));
+    }
+
+    if (!e->text().isEmpty() && completionPrefix.length() > 2 ) {
+        completer->complete();
+    }
+
+    QString DocumentTitle = documentTitle();
+
+    QTextCursor Cursor = textCursor();
+    int Position = Cursor.position();
+
+    if (e->key() == Qt::Key_ParenLeft) {
+        Cursor.insertText(")");
+        Cursor.setPosition(Position);
+        setTextCursor(Cursor);
+    }
+
+    if (e->key() == Qt::Key_BracketLeft) {
+        Cursor.insertText("]");
+        Cursor.setPosition(Position);
+        setTextCursor(Cursor);
+    }
+
+    if (e->key() == Qt::Key_BraceLeft) {
+        Cursor.insertText("}");
+        Cursor.setPosition(Position);
+        setTextCursor(Cursor);
+    }
+
+    if (e->key() == Qt::Key_QuoteDbl) {
+        Cursor.insertText("\"");
+        Cursor.setPosition(Position);
+        setTextCursor(Cursor);
+    }
+
+    if (e->key() == Qt::Key_Apostrophe) {
+        Cursor.insertText("'");
+        Cursor.setPosition(Position);
+        setTextCursor(Cursor);
+    } else {
+        QPlainTextEdit::keyPressEvent(e);
+    }
+
+    // setDocumentTitle(DocumentTitle);
+}
+
+QStringList TextEditor::getWords()
+{
+    return toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts);
+}
+
+void TextEditor::insertCompletion( const QString& completion )
+{
+    QTextCursor cursor = textCursor();
+    int extra = completion.length() - completer->completionPrefix().length();
+    cursor.movePosition( QTextCursor::Left );
+    cursor.movePosition( QTextCursor::EndOfWord );
+    cursor.insertText( completion.right( extra ) );
+    setTextCursor( cursor );
+}
+
+QString TextEditor::textUnderCursor() const
+{
+    QTextCursor cursor = textCursor();
+    cursor.select( QTextCursor::WordUnderCursor );
+    return cursor.selectedText();
+}

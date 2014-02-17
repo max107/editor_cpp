@@ -6,6 +6,10 @@
 #include <QDebug>
 #include <QApplication>
 
+#include <QScrollBar>
+#include <QAbstractItemView>
+#include <QStringListModel>
+#include <QCompleter>
 #include <QTextBlock>
 #include <QPainter>
 #include <QFileDialog>
@@ -37,6 +41,10 @@ public:
     int  LineNumberAreaWidth();
     void LineNumberAreaPaintEvent(QPaintEvent *event);
     void setTabSize(const int tabStop = 4);
+
+    // Autocomplete
+    int minCompleterLength;
+    QStringList getWords();
 public slots:
     // Saving functions
     bool MaybeSave();
@@ -61,6 +69,7 @@ public slots:
     // Other functions
     int CountWords();
     QString CalculateSize();
+
 signals:
     void requestUpdateTitle();
 
@@ -70,6 +79,15 @@ protected:
 
     // Used for multiline identation
     void keyPressEvent(QKeyEvent *e);
+    void focusInEvent(QFocusEvent *e);
+
+private:
+    // Autocompletion
+    QCompleter *c;
+    QString textUnderCursor() const;
+
+private slots:
+    void insertCompletion(const QString &completion);
 };
 
 class LineNumberArea : public QWidget

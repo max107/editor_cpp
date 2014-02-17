@@ -76,7 +76,7 @@ public:
         MainWindow->setCentralWidget(central);
 
 //        setupDarkTheme();
-        setupStyle();
+//        setupStyle();
 
         retranslateUi(MainWindow);
 

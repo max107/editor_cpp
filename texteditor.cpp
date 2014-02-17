@@ -16,6 +16,18 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
     Counter = 0;
     Start = 0;
     End = 0;
+
+    // Setup autocomplete
+    minCompleterLength = 2;
+
+    c = new QCompleter(this);
+    c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
+    c->setWidget(this);
+    c->setCompletionMode(QCompleter::PopupCompletion);
+    c->setCaseSensitivity(Qt::CaseInsensitive);
+    c->setWrapAround(false);
+
+    QObject::connect(c, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
 }
 
 bool TextEditor::closeDocument()
@@ -118,6 +130,9 @@ void TextEditor::OpenFile(const QString FileLocation) {
             QTextStream InputFile(&File);
             InputFile.setCodec("UTF-8");
             setPlainText(InputFile.readAll());
+
+            c->setModel(new QStringListModel(getWords(), c));
+
             File.close();
             Filename = FileLocation;
             SetupFile();
@@ -192,14 +207,14 @@ void TextEditor::setTabSize(const int tabStop)
 
 int TextEditor::CountWords() {
     // This is a very precise way of counting words, but it can consume lot of CPU and RAM on large files
-    if (toPlainText().length() > 10000)
+    if (toPlainText().length() > 10000) {
         return toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts).count();
+    }
 
     // This method is not very precise, but it does not consume too much CPU and RAM
     {
         QString text = toPlainText();
-        if (text.length() < Size)
-        {
+        if (text.length() < Size) {
             Size = 0;
             Counter = 0;
             Start = 0;
@@ -207,27 +222,31 @@ int TextEditor::CountWords() {
         }
 
         if (text.length() - Size == 1) {
-            if (text.length() == 1)
-                if(!text.at(0).isSpace())
+            if (text.length() == 1) {
+                if(!text.at(0).isSpace()) {
                     Counter++;
+                }
+            }
 
             if (text.length() > 2) {
                 Start = text.length() - 1;
                 End = text.length();
 
-                if (text.at(Start - 1).isSpace() && !text.at(End - 1).isSpace())
+                if (text.at(Start - 1).isSpace() && !text.at(End - 1).isSpace()) {
                     Counter++;
+                }
             }
-        }
-
-        else if (text.length() - Size > 1) {
+        } else if (text.length() - Size > 1) {
             Counter = 0;
-            if (!text.at(0).isSpace())
+            if (!text.at(0).isSpace()) {
                 Counter++;
+            }
 
-            for (int i = 1; i < text.length(); i++)
-                if(!text.at(i).isSpace() && text.at(i-1).isSpace())
+            for (int i = 1; i < text.length(); i++) {
+                if(!text.at(i).isSpace() && text.at(i-1).isSpace()) {
                     Counter++;
+                }
+            }
         }
 
         Size = text.length();
@@ -239,15 +258,12 @@ QString TextEditor::CalculateSize() {
     float Length = toPlainText().length();
     QString UnitString;
 
-    if  ((Length >= 0) & (Length < 1024))
+    if  ((Length >= 0) & (Length < 1024)) {
         UnitString = " bytes";
-
-    else if  ((Length > 1024) & (Length < 1048576)) {
+    } else if  ((Length > 1024) & (Length < 1048576)) {
         Length /= 1024;
         UnitString = " KB";
-    }
-
-    else if  ((Length > 1048576)) {
+    } else if  ((Length > 1048576)) {
         Length /= 1048576;
         UnitString = " MB";
     }
@@ -266,42 +282,124 @@ void TextEditor::UpdateDocumentStatus() {
 }
 
 void TextEditor::keyPressEvent(QKeyEvent *e) {
-    QString DocumentTitle = documentTitle();
-
-    QTextCursor Cursor = textCursor();
-    int Position = Cursor.position();
-
-    if (e->key() == Qt::Key_ParenLeft) {
-        Cursor.insertText(")");
-        Cursor.setPosition(Position);
-        setTextCursor(Cursor);
+    if (c && c->popup()->isVisible()) {
+        // The following keys are forwarded by the completer to the widget
+       switch (e->key()) {
+       case Qt::Key_Enter:
+       case Qt::Key_Return:
+       case Qt::Key_Escape:
+       case Qt::Key_Tab:
+       case Qt::Key_Backtab:
+            e->ignore();
+            return; // let the completer do default behavior
+       default:
+           break;
+       }
     }
 
-    if (e->key() == Qt::Key_BracketLeft) {
-        Cursor.insertText("]");
-        Cursor.setPosition(Position);
-        setTextCursor(Cursor);
-    }
-
-    if (e->key() == Qt::Key_BraceLeft) {
-        Cursor.insertText("}");
-        Cursor.setPosition(Position);
-        setTextCursor(Cursor);
-    }
-
-    if (e->key() == Qt::Key_QuoteDbl) {
-        Cursor.insertText("\"");
-        Cursor.setPosition(Position);
-        setTextCursor(Cursor);
-    }
-
-    if (e->key() == Qt::Key_Apostrophe) {
-        Cursor.insertText("'");
-        Cursor.setPosition(Position);
-        setTextCursor(Cursor);
-    } else {
+    bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
+    if (!c || !isShortcut) // do not process the shortcut when we have a completer
         QPlainTextEdit::keyPressEvent(e);
+
+    const bool ctrlOrShift = e->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier);
+    if (!c || (ctrlOrShift && e->text().isEmpty()))
+        return;
+
+    static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
+    bool hasModifier = (e->modifiers() != Qt::NoModifier) && !ctrlOrShift;
+    QString completionPrefix = textUnderCursor();
+
+    if (!isShortcut && (hasModifier || e->text().isEmpty()|| completionPrefix.length() < minCompleterLength
+                      || eow.contains(e->text().right(1)))) {
+        c->popup()->hide();
+        return;
     }
+
+    if (completionPrefix != c->completionPrefix()) {
+        c->setCompletionPrefix(completionPrefix);
+        c->popup()->setCurrentIndex(c->completionModel()->index(0, 0));
+    }
+    QRect cr = cursorRect();
+    cr.setWidth(c->popup()->sizeHintForColumn(0)
+                + c->popup()->verticalScrollBar()->sizeHint().width());
+    c->complete(cr); // popup it up!
+
+
+//    QString DocumentTitle = documentTitle();
+
+//    QTextCursor Cursor = textCursor();
+//    int Position = Cursor.position();
+
+//    if (e->key() == Qt::Key_ParenLeft) {
+//        Cursor.insertText(")");
+//        Cursor.setPosition(Position);
+//        setTextCursor(Cursor);
+//    }
+
+//    if (e->key() == Qt::Key_BracketLeft) {
+//        Cursor.insertText("]");
+//        Cursor.setPosition(Position);
+//        setTextCursor(Cursor);
+//    }
+
+//    if (e->key() == Qt::Key_BraceLeft) {
+//        Cursor.insertText("}");
+//        Cursor.setPosition(Position);
+//        setTextCursor(Cursor);
+//    }
+
+//    if (e->key() == Qt::Key_QuoteDbl) {
+//        Cursor.insertText("\"");
+//        Cursor.setPosition(Position);
+//        setTextCursor(Cursor);
+//    }
+
+//    if (e->key() == Qt::Key_Apostrophe) {
+//        Cursor.insertText("'");
+//        Cursor.setPosition(Position);
+//        setTextCursor(Cursor);
+//    }
+
+    // QPlainTextEdit::keyPressEvent(e);
 
     // setDocumentTitle(DocumentTitle);
+}
+
+QStringList TextEditor::getWords()
+{
+//    qDebug() << toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts);
+//    return toPlainText().split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts);
+    QStringList words;
+    words << "simple" << "test";
+    return words;
+}
+
+void TextEditor::insertCompletion(const QString& completion)
+{
+    if (c->widget() != this) {
+        return;
+    }
+
+    QTextCursor tc = textCursor();
+    int extra = completion.length() - c->completionPrefix().length();
+    tc.movePosition(QTextCursor::Left);
+    tc.movePosition(QTextCursor::EndOfWord);
+    tc.insertText(completion.right(extra));
+    setTextCursor(tc);
+}
+
+QString TextEditor::textUnderCursor() const
+{
+    QTextCursor tc = textCursor();
+    tc.select(QTextCursor::WordUnderCursor);
+    return tc.selectedText();
+}
+
+
+void TextEditor::focusInEvent(QFocusEvent *e)
+{
+    if (c) {
+        c->setWidget(this);
+    }
+    QPlainTextEdit::focusInEvent(e);
 }
