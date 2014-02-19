@@ -17,6 +17,8 @@
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QSplitter>
 
+#include "treeview.h"
+
 QT_BEGIN_NAMESPACE
 
 class UiMainWindow
@@ -28,8 +30,7 @@ public:
     QMenuBar *menuBar;
     QStatusBar *statusBar;
 
-    QTreeView *tree;
-    QFileSystemModel *treeModel;
+    TreeView *tree;
 
     QTabWidget *tabs;
     QTabWidget *sidebarTabs;
@@ -53,7 +54,7 @@ public:
         setupStatusBar(MainWindow);
         setupSidebarTabs(MainWindow);
         setupTabs(MainWindow);
-        setupTree("/Volumes/mac/Users/max/test/");
+        setupTree("/Volumes/mac/Users/max/projects/editor/");
 
         split = new QSplitter;
         split->addWidget(sidebarTabs);
@@ -108,22 +109,14 @@ public:
 
     void setupTree(const QString &path)
     {
-        treeModel = new QFileSystemModel;
-        // model->setRootPath(QDir::currentPath());
-        treeModel->setRootPath(path);
-        tree = new QTreeView;
+        tree = new TreeView;
         tree->setObjectName("tree");
         tree->setAccessibleName("tree");
-        // Disable outline
-        tree->setAttribute(Qt::WA_MacShowFocusRect, false);
-
-        tree->setModel(treeModel);
-        tree->setRootIndex(treeModel->index(path));
-
-        tree->header()->hide();
         tree->hideColumn(1);
         tree->hideColumn(2);
         tree->hideColumn(3);
+
+        tree->setPath(path);
     }
 
     void setupSidebarTabs(QMainWindow *MainWindow)
@@ -160,8 +153,8 @@ public:
 
     void setupStyle()
     {
-        QFile styleFile("d:\\projects\\editor_cpp\\data\\style.css");
-        // QFile styleFile("/Volumes/mac/Users/max/test/data/style.css");
+        // QFile styleFile("d:\\projects\\editor_cpp\\data\\style.css");
+        QFile styleFile("/Volumes/mac/Users/max/projects/editor/data/style.css");
         if (styleFile.open(QIODevice::ReadOnly)) {
             QByteArray bytes = styleFile.readAll();
             // QApplication *app = (QApplication*)QApplication::instance();

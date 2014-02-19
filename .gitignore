@@ -1,5 +1,6 @@
 .DS_Store
 moc_*
+
 *.app
 *.exe
 
@@ -18,3 +19,6 @@ test.cpp
 *.lai
 *.la
 *.a
+
+Makefile*
+debug

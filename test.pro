@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     languages/vala.cpp \
     languages/bash.cpp \
     languages/vb.cpp \
-    line_number.cpp
+    line_number.cpp \
+    treeview.cpp
 
 HEADERS  += mainwindow.h \
     plugin_interface.h \
@@ -35,7 +36,8 @@ HEADERS  += mainwindow.h \
     application.h \
     shared.h \
     highlighter.h \
-    ui.h
+    ui.h \
+    treeview.h
 
 FORMS    +=
 
