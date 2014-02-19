@@ -12,8 +12,6 @@ QTabWidget::tab-bar {
 
 TextEditor {
 	border: none;
-	font-size: 12px;
-	font-family: Consolas, Courier;
 }
 
 #tabs::pane {
