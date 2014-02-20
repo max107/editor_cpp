@@ -19,6 +19,25 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
 
     // Setup autocomplete
     minCompleterLength = 1;
+
+    c = new QCompleter(this);
+//            c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
+    c->setCompletionMode(QCompleter::PopupCompletion);
+    c->setCaseSensitivity(Qt::CaseInsensitive);
+    c->setWrapAround(false);
+    c->setWidget(this);
+    c->popup()->setObjectName("autocomplete");
+
+    completerModel = new QStringListModel(getWords(), c);
+    c->setModel(completerModel);
+
+    connect(this, SIGNAL(textChanged()),
+            this, SLOT(updateCompleterModel()));
+}
+
+void TextEditor::updateCompleterModel()
+{
+    completerModel->setStringList(getWords());
 }
 
 bool TextEditor::closeDocument()
@@ -120,15 +139,6 @@ void TextEditor::OpenFile(const QString FileLocation) {
             QTextStream InputFile(&File);
             InputFile.setCodec("UTF-8");
             setPlainText(InputFile.readAll());
-
-            c = new QCompleter(this);
-//            c->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
-            c->setModel(new QStringListModel(getWords(), c));
-            c->setCompletionMode(QCompleter::PopupCompletion);
-            c->setCaseSensitivity(Qt::CaseInsensitive);
-            c->setWrapAround(false);
-            c->setWidget(this); 
-            c->popup()->setObjectName("autocomplete");
 
             QObject::connect(c, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
 
@@ -370,7 +380,15 @@ QStringList TextEditor::getWords()
         text = text.replace(chars[i], " ");
     }
 
-    return text.split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts).toSet().toList();
+    QStringList words = text.split(QRegExp("(\\s|\\n|\\r)+"), QString::SkipEmptyParts).toSet().toList();
+
+    foreach (QString str, words) {
+        if(str == textUnderCursor()) {
+            words.removeAt(words.indexOf(str));
+        }
+    }
+
+    return words;
 }
 
 void TextEditor::insertCompletion(const QString& completion)

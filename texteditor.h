@@ -74,6 +74,7 @@ public slots:
     int CountWords();
     QString CalculateSize();
 
+    void updateCompleterModel();
 signals:
     void requestUpdateTitle();
 
@@ -88,6 +89,7 @@ protected:
 private:
     // Autocompletion
     QCompleter *c;
+    QStringListModel *completerModel;
     QString textUnderCursor() const;
 
 private slots:
