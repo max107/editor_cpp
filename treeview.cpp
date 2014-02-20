@@ -16,10 +16,6 @@ TreeView::TreeView( QWidget *parent )
     connect(newFolder, SIGNAL(triggered()), this, SLOT(newFolder()));
     addAction(newFolder);
 
-    QAction* rename = new QAction("Rename", this);
-    connect(newFile, SIGNAL(triggered()), this, SLOT(newFile()));
-    addAction(rename);
-
     QAction* deleteItem = new QAction("Delete", this);
     connect(deleteItem, SIGNAL(triggered()), this, SLOT(deleteFileOrFolder()));
     addAction(deleteItem);
@@ -33,38 +29,20 @@ TreeView::TreeView( QWidget *parent )
     // Setup sort criteria
     // directory first, ignore case,
     // and sort by name
-    model->setSorting(QDir::DirsFirst |
-                      QDir::IgnoreCase |
-                      QDir::Name);
+    model->setSorting(QDir::DirsFirst | QDir::IgnoreCase | QDir::Name);
     model->setFilter(QDir::Dirs | QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot);
     setModel(model);
 
     setHeaderHidden(true);
 
     // Fix double click event
-    setSelectionMode( QAbstractItemView::SingleSelection );
-    setExpandsOnDoubleClick(false);
-    setEditTriggers(QAbstractItemView::NoEditTriggers);
+    // setSelectionMode( QAbstractItemView::SingleSelection );
+    setExpandsOnDoubleClick(true);
+    setEditTriggers(QAbstractItemView::EditKeyPressed);
+    // setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    // Expand folder as single click
-    connect(this, SIGNAL(clicked(const QModelIndex &)),
-            this, SLOT(toggle(const QModelIndex &)));
-
-    connect(this, SIGNAL(activated(QModelIndex)),
-            this, SLOT(toggle(const QModelIndex &)));
-}
-
-void TreeView::toggle(const QModelIndex &index)
-{
-    if(!index.isValid()) {
-        return;
-    }
-
-    if(isExpanded(index)) {
-        collapse(index);
-    } else {
-        expand(index);
-    }
+//    connect(this, SIGNAL(activated(QModelIndex)),
+//            this, SLOT(toggle(const QModelIndex &)));
 }
 
 void TreeView::copyPathToClipboard()
@@ -108,13 +86,37 @@ void TreeView::newFile()
         return;
     }
 
-    QString name  = QInputDialog::getText(this, "Name", "Enter a name");
+    QString name  = QInputDialog::getText(this, "Name", "Enter a file name");
 
     if(name.isEmpty()) {
         return;
     }
 
-    model->mkdir(index, name);
+    QFileInfo info = model->fileInfo(index);
+
+    QDir dir;
+    // If current item in tree is a file
+    if(!info.isDir()) {
+        // Get parent directory from file
+        dir = info.dir();
+    } else {
+        // Else get current absolute dir path
+        dir = QDir(info.absoluteFilePath());
+    }
+
+    // Merge dir path with entered user path and cd into dir
+    QFileInfo newFile = QFileInfo(QDir::cleanPath(dir.path() + QDir::separator() + name));
+
+    // if path not exists
+    if(!newFile.exists()) {
+        QFile File(newFile.absoluteFilePath());
+        if (File.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            File.close();
+
+            // refresh tree
+            model->refresh();
+        }
+    }
 }
 
 void TreeView::deleteFileOrFolder()
@@ -153,7 +155,7 @@ void TreeView::newFolder()
         return;
     }
 
-    QString name  = QInputDialog::getText(this, "Name", "Enter a name");
+    QString name  = QInputDialog::getText(this, "Name", "Enter a directory name");
 
     if(name.isEmpty()) {
         return;
@@ -164,7 +166,6 @@ void TreeView::newFolder()
 
     // For mkpath like logic. test1/test2/test3 supported
     QFileInfo info = model->fileInfo(index);
-    qDebug() << info.dir();
 
     QDir dir;
     // If current item in tree is a file
@@ -183,8 +184,8 @@ void TreeView::newFolder()
     if(!newDir.exists()) {
         // create current dir|dirs
         newDir.mkpath(QString('.'));
-    }
 
-    // refresh tree
-    model->refresh();
+        // refresh tree
+        model->refresh();
+    }
 }

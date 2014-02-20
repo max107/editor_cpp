@@ -10,6 +10,7 @@
 #include <QDirModel>
 #include <QTreeView>
 #include <QWidget>
+#include <QTreeWidgetItem>
 
 class TreeView : public QTreeView
 {
@@ -27,7 +28,6 @@ public slots:
     void deleteFileOrFolder();
     void newFile();
     void copyPathToClipboard();
-    void toggle(const QModelIndex &index);
 };
 
 #endif // TREEVIEW_H
