@@ -41,6 +41,13 @@ public:
         if (MainWindow->objectName().isEmpty()) {
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
         }
+
+        if(Shared::CheckOS() == "Mac") {
+            QFont font = QFont("Lucida Grande");
+            font.setPixelSize(13);
+            QApplication::setFont(font);
+        }
+
         //specify a new font.
         // QFont newFont("Lucida Grande", 12, QFont::Normal, false);
         //set font of application
