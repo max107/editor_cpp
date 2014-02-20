@@ -28,7 +28,8 @@ SOURCES += main.cpp\
     languages/bash.cpp \
     languages/vb.cpp \
     line_number.cpp \
-    treeview.cpp
+    treeview.cpp \
+    projectslist.cpp
 
 HEADERS  += mainwindow.h \
     plugin_interface.h \
@@ -37,7 +38,8 @@ HEADERS  += mainwindow.h \
     shared.h \
     highlighter.h \
     ui.h \
-    treeview.h
+    treeview.h \
+    projectslist.h
 
 FORMS    +=
 

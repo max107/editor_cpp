@@ -33,6 +33,17 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
 
     connect(this, SIGNAL(textChanged()),
             this, SLOT(updateCompleterModel()));
+
+    QTextOption option = document()->defaultTextOption();
+
+    bool on = true;
+    if (on) {
+        option.setFlags(option.flags() | QTextOption::ShowTabsAndSpaces);
+    } else {
+        option.setFlags(option.flags() & ~QTextOption::ShowTabsAndSpaces);
+    }
+    option.setFlags(option.flags() | QTextOption::AddSpaceForLineAndParagraphSeparators);
+    document()->setDefaultTextOption(option);
 }
 
 void TextEditor::updateCompleterModel()

@@ -17,6 +17,7 @@
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QSplitter>
 
+#include "projectslist.h"
 #include "treeview.h"
 
 QT_BEGIN_NAMESPACE
@@ -31,6 +32,7 @@ public:
     QStatusBar *statusBar;
 
     TreeView *tree;
+    ProjectsList *projects;
 
     QTabWidget *tabs;
     QTabWidget *sidebarTabs;
@@ -62,6 +64,7 @@ public:
         setupSidebarTabs(MainWindow);
         setupTabs(MainWindow);
         setupTree("/Volumes/mac/Users/max/projects/editor/");
+        setupProjects();
 
         split = new QSplitter;
         split->addWidget(sidebarTabs);
@@ -75,6 +78,9 @@ public:
         // TODO plugins
         addSidebarTab(tree, "/Volumes/mac/Users/max/Desktop/upload2.png",
                       QApplication::translate("Tree", "Tree", 0));
+
+//        addSidebarTab(projects, "/Volumes/mac/Users/max/Desktop/upload2.png",
+//                      QApplication::translate("Projects", "Projects", 0));
 
         central = new QWidget;
         layout = new QVBoxLayout;
@@ -91,6 +97,14 @@ public:
 
         QMetaObject::connectSlotsByName(MainWindow);
     } // setupUi
+
+    void setupProjects()
+    {
+        projects = new ProjectsList();
+        projects->setObjectName("projects");
+        projects->setAccessibleName("projects");
+        sidebarTabs->addTab(projects, "Projects");
+    }
 
     void addSidebarTab(QWidget *widget, const QString & iconPath, const QString & name)
     {
