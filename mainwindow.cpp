@@ -31,16 +31,42 @@ MainWindow::~MainWindow()
 
 void MainWindow::writeSettings()
 {
-    QSettings Settings("IDE settings", "Settings");
+    QSettings settings("IDE settings", "Settings");
 
     // Window Settings
-    Settings.setValue("Window.Geometry",  geometry());
+    settings.setValue("Window.Geometry",  geometry());
+
+    int size = settings.beginReadArray("results");
+    settings.endArray();
+    settings.beginWriteArray("results");
+    settings.setArrayIndex(size);
+    settings.setValue("result", "qwerty");
+    settings.setValue("result1", "qwerty");
+    settings.setValue("result2", "qwerty");
+    settings.endArray();
+
+    int sizeSettings = settings.beginReadArray("results");
+    for(int i=0; i<sizeSettings; ++i)
+    {
+        settings.setArrayIndex(i);
+        qDebug() << settings.value("result").toString();
+    }
+
+    settings.beginGroup("projects");
+    const QStringList keys = settings.allKeys();
+    foreach (const QString &key, keys) {
+        QString value = settings.value(key).toString();
+        qDebug() << key << value;
+    }
+    settings.endGroup();
+
+    qDebug() << qApp->applicationDirPath();
 }
 
 void MainWindow::loadSettings()
 {
-    QSettings Settings("IDE settings", "Settings");
-    setGeometry(Settings.value("Window.Geometry",  QRect(150, 150, 800, 400)).toRect());
+    QSettings settings("IDE settings", "Settings");
+    setGeometry(settings.value("Window.Geometry",  QRect(150, 150, 800, 400)).toRect());
 }
 
 void MainWindow::openDocument()
@@ -210,7 +236,7 @@ void MainWindow::reloadStyles()
 
 void MainWindow::treeOpenFile(const QModelIndex& index)
 {
-    QFileInfo info = ui->treeModel->fileInfo(index);
+    QFileInfo info = ui->tree->model->fileInfo(index);
     QString path = info.filePath();
     QDir dir = QDir(path);
     if (info.isFile()) {
