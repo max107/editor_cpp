@@ -44,6 +44,13 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
     }
     option.setFlags(option.flags() | QTextOption::AddSpaceForLineAndParagraphSeparators);
     document()->setDefaultTextOption(option);
+
+    setTabsAsSpaces(true);
+}
+
+void TextEditor::setTabsAsSpaces(bool value)
+{
+    tabsAsSpaces = value;
 }
 
 void TextEditor::updateCompleterModel()
@@ -291,7 +298,45 @@ void TextEditor::UpdateDocumentStatus() {
     QString WordCountString = Shared::Words  + ": " + QString::number(CountWords());
 }
 
+int TextEditor::getIndentPosition(QString & str)
+{
+    int indent = 0;
+    for (int i = 0; str.size() - 1 >= i; i++) {
+        if (!str.at(i).isSpace()) {
+            break;
+        }
+        indent++;
+    }
+    return indent;
+}
+
+void TextEditor::autoIndentNewLine()
+{
+    QString tab = QString('\t');
+//    if (tabsAsSpaces) {
+//        tab = ' ' * tabStopWidth();
+//    }
+
+    QTextCursor cursor = textCursor();
+    QString text = cursor.block().text();
+    int indent = getIndentPosition(text);
+    cursor.beginEditBlock();
+    cursor.insertBlock();
+    for (; indent > 0; --indent) {
+        cursor.insertText(tab);
+    }
+    cursor.endEditBlock();
+}
+
 void TextEditor::keyPressEvent(QKeyEvent *e) {
+
+    // Smart indent
+    if (e->key() == Qt::Key_Return) {
+        e->accept();
+        autoIndentNewLine();
+        return;
+    }
+
     if (c && c->popup()->isVisible()) {
         // The following keys are forwarded by the completer to the widget
        switch (e->key()) {

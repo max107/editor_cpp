@@ -38,6 +38,9 @@ public:
     long long Size;
     long long Counter;
 
+    bool tabsAsSpaces;
+    void setTabsAsSpaces(bool value);
+
     // Extra widgets
     QWidget     *LineCountArea;
 
@@ -49,6 +52,8 @@ public:
     // Autocomplete
     int minCompleterLength;
     QStringList getWords();
+    void autoIndentNewLine();
+    int getIndentPosition(QString &str);
 public slots:
     // Saving functions
     bool MaybeSave();
