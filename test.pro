@@ -14,29 +14,29 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
     mainwindow.cpp \
-    texteditor.cpp \
+    editor/texteditor.cpp \
     application.cpp \
     shared.cpp \
-    highlighter.cpp \
-    languages/c.cpp \
-    languages/css.cpp \
-    languages/html.cpp \
-    languages/java.cpp \
-    languages/latex.cpp \
-    languages/python.cpp \
-    languages/vala.cpp \
-    languages/bash.cpp \
-    languages/vb.cpp \
-    line_number.cpp \
+    editor/highlighter.cpp \
+    editor/languages/c.cpp \
+    editor/languages/css.cpp \
+    editor/languages/html.cpp \
+    editor/languages/java.cpp \
+    editor/languages/latex.cpp \
+    editor/languages/python.cpp \
+    editor/languages/vala.cpp \
+    editor/languages/bash.cpp \
+    editor/languages/vb.cpp \
+    editor/line_number.cpp \
     treeview.cpp \
     projectslist.cpp
 
 HEADERS  += mainwindow.h \
     plugin_interface.h \
-    texteditor.h \
+    editor/texteditor.h \
     application.h \
     shared.h \
-    highlighter.h \
+    editor/highlighter.h \
     ui.h \
     treeview.h \
     projectslist.h

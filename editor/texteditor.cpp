@@ -36,7 +36,7 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
 
     QTextOption option = document()->defaultTextOption();
 
-    bool on = true;
+    bool on = false;
     if (on) {
         option.setFlags(option.flags() | QTextOption::ShowTabsAndSpaces);
     } else {
@@ -221,6 +221,7 @@ bool TextEditor::SaveFile(const QString FileLocation) {
 void TextEditor::setTabSize(const int tabStop)
 {
     QFontMetrics metrics(font());
+    tabStopCount = tabStop;
     setTabStopWidth(tabStop * metrics.width(' '));
 }
 
@@ -298,28 +299,53 @@ void TextEditor::UpdateDocumentStatus() {
     QString WordCountString = Shared::Words  + ": " + QString::number(CountWords());
 }
 
+QString TextEditor::rstrip(const QString& str) {
+    int n = str.size() - 1;
+    for (; n >= 0; --n) {
+        if (!str.at(n).isSpace()) {
+            return str.left(n + 1);
+        }
+    }
+    return "";
+}
+
 int TextEditor::getIndentPosition(QString & str)
 {
+    QString tab = QString('\t');
+
     int indent = 0;
-    for (int i = 0; str.size() - 1 >= i; i++) {
-        if (!str.at(i).isSpace()) {
-            break;
+    QString trimmed = rstrip(str);
+    if(trimmed.size() == 0) {
+        indent = str.size();
+    } else {
+        for (int i = 0; str.size() - 1 >= i; i++) {
+            bool isTab = str.at(i) == tab;
+            if (!str.at(i).isSpace()) {
+                break;
+            }
+            if(isTab) {
+                indent += tabStopCount;
+            } else {
+                indent++;
+            }
         }
-        indent++;
     }
     return indent;
 }
 
 void TextEditor::autoIndentNewLine()
 {
-    QString tab = QString('\t');
-//    if (tabsAsSpaces) {
-//        tab = ' ' * tabStopWidth();
-//    }
-
     QTextCursor cursor = textCursor();
     QString text = cursor.block().text();
     int indent = getIndentPosition(text);
+
+    QString tab;
+    if (tabsAsSpaces) {
+        tab = QString(' ');
+    } else {
+        tab = QString('\t');
+    }
+
     cursor.beginEditBlock();
     cursor.insertBlock();
     for (; indent > 0; --indent) {
@@ -328,7 +354,54 @@ void TextEditor::autoIndentNewLine()
     cursor.endEditBlock();
 }
 
-void TextEditor::keyPressEvent(QKeyEvent *e) {
+void TextEditor::insertSmartTab()
+{
+    QString tab;
+    if (tabsAsSpaces) {
+        tab = QString(' ');
+    } else {
+        tab = QString('\t');
+    }
+
+    QTextCursor cursor = textCursor();
+    cursor.beginEditBlock();
+    int indent = tabStopCount;
+    for (; indent > 0; --indent) {
+        cursor.insertText(tab);
+    }
+    cursor.endEditBlock();
+}
+
+void TextEditor::goToLine(int lineNumber)
+{
+    QTextCursor cursor(document()->findBlockByLineNumber(lineNumber - 1));
+    cursor.select(QTextCursor::LineUnderCursor);
+    setTextCursor(cursor);
+    cursor.clearSelection();
+
+    /*
+    QTextBlock text_block = central_widget_TextDocument->findBlockByLineNumber(line_number - 1);
+    QTextCursor text_cursor = central_widget_TextEdit->textCursor ();
+    text_cursor.setPosition (text_block.position());
+    central_widget_TextEdit->setFocus();
+    text_cursor.select(QTextCursor::LineUnderCursor);
+    central_widget_TextEdit->setTextCursor(text_cursor);
+    */
+}
+
+bool TextEditor::NextCharacterIs(QTextCursor & cursor, const QString & str)
+{
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+    return cursor.selectedText() == str;
+}
+
+void TextEditor::smartText(QKeyEvent *e)
+{
+    if(e->key() == Qt::Key_Tab) {
+        e->accept();
+        insertSmartTab();
+        return;
+    }
 
     // Smart indent
     if (e->key() == Qt::Key_Return) {
@@ -337,6 +410,73 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
         return;
     }
 
+    QTextCursor cursor = textCursor();
+    int position = cursor.position();
+
+    if(e->key() == Qt::Key_ParenRight && NextCharacterIs(cursor, ")")) {
+        cursor.setPosition(position + 1);
+        setTextCursor(cursor);
+        return;
+    }
+
+    if (e->key() == Qt::Key_ParenLeft) {
+        cursor.insertText(")");
+        cursor.setPosition(position);
+        setTextCursor(cursor);
+    }
+
+    if(e->key() == Qt::Key_BracketRight && NextCharacterIs(cursor, "]")) {
+        cursor.setPosition(position + 1);
+        setTextCursor(cursor);
+        return;
+    }
+
+    if (e->key() == Qt::Key_BracketLeft) {
+        cursor.insertText("]");
+        cursor.setPosition(position);
+        setTextCursor(cursor);
+    }
+
+    if(e->key() == Qt::Key_BraceRight && NextCharacterIs(cursor, "}")) {
+        cursor.setPosition(position + 1);
+        setTextCursor(cursor);
+        return;
+    }
+
+    if (e->key() == Qt::Key_BraceLeft) {
+        cursor.insertText("}");
+        cursor.setPosition(position);
+        setTextCursor(cursor);
+    }
+
+    if(e->key() == Qt::Key_QuoteDbl && NextCharacterIs(cursor, "\"")) {
+        cursor.setPosition(position + 1);
+        setTextCursor(cursor);
+        return;
+    }
+
+    if (e->key() == Qt::Key_QuoteDbl) {
+        cursor.insertText("\"");
+        cursor.setPosition(position);
+        setTextCursor(cursor);
+    }
+
+    if(e->key() == Qt::Key_Apostrophe && NextCharacterIs(cursor, "'")) {
+        cursor.setPosition(position + 1);
+        setTextCursor(cursor);
+        return;
+    }
+
+    if (e->key() == Qt::Key_Apostrophe) {
+        cursor.insertText("'");
+        cursor.setPosition(position);
+        setTextCursor(cursor);
+    }
+
+    QPlainTextEdit::keyPressEvent(e);
+}
+
+void TextEditor::keyPressEvent(QKeyEvent *e) {
     if (c && c->popup()->isVisible()) {
         // The following keys are forwarded by the completer to the widget
        switch (e->key()) {
@@ -353,12 +493,14 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
     }
 
     bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
-    if (!c || !isShortcut) // do not process the shortcut when we have a completer
-        QPlainTextEdit::keyPressEvent(e);
+    if (!c || !isShortcut) { // do not process the shortcut when we have a completer
+        smartText(e);
+    }
 
     const bool ctrlOrShift = e->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier);
-    if (!c || (ctrlOrShift && e->text().isEmpty()))
+    if (!c || (ctrlOrShift && e->text().isEmpty())) {
         return;
+    }
 
     static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
     bool hasModifier = (e->modifiers() != Qt::NoModifier) && !ctrlOrShift;
@@ -379,38 +521,7 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
 
 //    QString DocumentTitle = documentTitle();
 
-//    QTextCursor Cursor = textCursor();
-//    int Position = Cursor.position();
 
-//    if (e->key() == Qt::Key_ParenLeft) {
-//        Cursor.insertText(")");
-//        Cursor.setPosition(Position);
-//        setTextCursor(Cursor);
-//    }
-
-//    if (e->key() == Qt::Key_BracketLeft) {
-//        Cursor.insertText("]");
-//        Cursor.setPosition(Position);
-//        setTextCursor(Cursor);
-//    }
-
-//    if (e->key() == Qt::Key_BraceLeft) {
-//        Cursor.insertText("}");
-//        Cursor.setPosition(Position);
-//        setTextCursor(Cursor);
-//    }
-
-//    if (e->key() == Qt::Key_QuoteDbl) {
-//        Cursor.insertText("\"");
-//        Cursor.setPosition(Position);
-//        setTextCursor(Cursor);
-//    }
-
-//    if (e->key() == Qt::Key_Apostrophe) {
-//        Cursor.insertText("'");
-//        Cursor.setPosition(Position);
-//        setTextCursor(Cursor);
-//    }
 
     // QPlainTextEdit::keyPressEvent(e);
 

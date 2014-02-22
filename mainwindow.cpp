@@ -1,9 +1,7 @@
 #include "mainwindow.h"
 #include "ui.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
@@ -31,42 +29,44 @@ MainWindow::~MainWindow()
 
 void MainWindow::writeSettings()
 {
-    QSettings settings("IDE settings", "Settings");
+    QSettings settings("cfg.ini", QSettings::IniFormat);
 
     // Window Settings
     settings.setValue("Window.Geometry",  geometry());
 
-    int size = settings.beginReadArray("results");
+    int size = settings.beginReadArray("projects");
     settings.endArray();
-    settings.beginWriteArray("results");
-    settings.setArrayIndex(size);
+    settings.beginWriteArray("projects");
+    // settings.setArrayIndex(size);
     settings.setValue("result", "qwerty");
     settings.setValue("result1", "qwerty");
     settings.setValue("result2", "qwerty");
     settings.endArray();
-
-    int sizeSettings = settings.beginReadArray("results");
-    for(int i=0; i<sizeSettings; ++i)
-    {
-        settings.setArrayIndex(i);
-        qDebug() << settings.value("result").toString();
-    }
-
-    settings.beginGroup("projects");
-    const QStringList keys = settings.allKeys();
-    foreach (const QString &key, keys) {
-        QString value = settings.value(key).toString();
-        qDebug() << key << value;
-    }
-    settings.endGroup();
-
-    qDebug() << qApp->applicationDirPath();
 }
 
 void MainWindow::loadSettings()
 {
-    QSettings settings("IDE settings", "Settings");
+    QSettings settings("cfg.ini", QSettings::IniFormat);
     setGeometry(settings.value("Window.Geometry",  QRect(150, 150, 800, 400)).toRect());
+
+    QStandardItemModel* ListModel = new QStandardItemModel();
+
+    int size = settings.beginReadArray("projects");
+    const QStringList keys = settings.childKeys();
+    qDebug() << 1;
+    foreach (const QString &key, keys) {
+        QString value = settings.value(key).toString();
+        if(key == "size") {
+            continue;
+        }
+        qDebug() << key << value;
+
+        QStandardItem* Items = new QStandardItem(key);
+        Items->setText(value);
+        ListModel->appendRow(Items);
+        ui->projects->setModel(ListModel);
+    }
+    settings.endArray();
 }
 
 void MainWindow::openDocument()
@@ -152,6 +152,12 @@ void MainWindow::setupMenu()
     QAction *saveSettings = settingsMenu->addAction(tr("S&ave settings"));
     connect(saveSettings, SIGNAL(triggered()), this, SLOT(writeSettings()));
 
+    settingsMenu->addSeparator();
+
+    QAction *rightSidebar = settingsMenu->addAction(tr("Sidebar right"));
+    rightSidebar->setCheckable(true);
+    connect(rightSidebar, SIGNAL(triggered()), this, SLOT(rightSidebar(bool checked)));
+
     QMenu *languageMenu = new QMenu(tr("&Languages"));
 
     QAction *PlainText  = new QAction(Shared::PlainText,  this);
@@ -229,6 +235,11 @@ void MainWindow::setupMenu()
     menuBar()->addMenu(languageMenu);
 }
 
+void MainWindow::rightSidebar(bool checked)
+{
+    qDebug() << checked;
+}
+
 void MainWindow::reloadStyles()
 {
     ui->setupStyle();
@@ -277,6 +288,7 @@ void *MainWindow::newWorkspace(const QString& fileName)
     textEdit->setProperty("fileName", fileName);
     int index = ui->tabs->addTab(textEdit, QFileInfo(fileName).fileName());
     ui->tabs->setCurrentIndex(index);
+    textEdit->setFocus();
 }
 
 void MainWindow::SetColorschemes(int Colorscheme) {

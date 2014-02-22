@@ -24,8 +24,8 @@
 #include <QMessageBox>
 
 #include "shared.h"
-#include "texteditor.h"
-#include "highlighter.h"
+#include "editor/texteditor.h"
+#include "editor/highlighter.h"
 #include "ui.h"
 
 using namespace std;
@@ -51,6 +51,7 @@ public slots:
     void UpdateHighlightingMode(int FileType);
     void SetColorschemes(int Colorscheme);
     void reloadStyles();
+    void rightSidebar(bool checked);
 private slots:
     void loadSettings();
     void writeSettings();

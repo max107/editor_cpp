@@ -38,6 +38,7 @@ public:
     long long Size;
     long long Counter;
 
+    int tabStopCount;
     bool tabsAsSpaces;
     void setTabsAsSpaces(bool value);
 
@@ -54,6 +55,11 @@ public:
     QStringList getWords();
     void autoIndentNewLine();
     int getIndentPosition(QString &str);
+    QString rstrip(const QString &str);
+    void insertSmartTab();
+    void goToLine(int lineNumber);
+    bool NextCharacterIs(QTextCursor &cursor, const QString &str);
+    void smartText(QKeyEvent *e);
 public slots:
     // Saving functions
     bool MaybeSave();

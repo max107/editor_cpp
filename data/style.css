@@ -32,7 +32,7 @@ QTabWidget {
 
 #tabs QTabBar::tab {
     padding: 8px 12px;
-    background-color: #fff;
+    background-color: #2A2B2E;
     border: none;
 	color: #999;
 }
@@ -44,7 +44,7 @@ QTabWidget {
 }
 
 #statusBar {
-    border-top: 1px solid #D1D1D4;
+    border: none;
 }
 
 #split {
@@ -108,6 +108,7 @@ QScrollBar::add-page, QScrollBar::sub-page {
      background: none;
 }
 
+/*
 QAbstractItemView[objectName="autocomplete"] {
 	border: none;
 	color: #fff;
@@ -115,4 +116,11 @@ QAbstractItemView[objectName="autocomplete"] {
 	background-color: #3d3d3d;
 	padding: 2px 4px;
 	min-width: 120px;
+}
+*/
+
+#projects {
+	border: 0;
+	background-color: #34363A;
+	color: #fff;
 }
