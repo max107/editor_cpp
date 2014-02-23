@@ -8,7 +8,12 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
     connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(UpdateLineNumberArea(QRect,int)));
     UpdateLineNumberAreaWidth(0);
 
-    connect(this, SIGNAL(cursorPositionChanged()),  this, SLOT(Highlight_Current_Line()));
+//    connect(this, SIGNAL(cursorPositionChanged()),
+//            this, SLOT(Highlight_Current_Line()));
+    connect(this, SIGNAL(cursorPositionChanged()),
+            this, SLOT(bracketValidate()));
+
+    setFont(QFont("Monaco", 12));
 
     setTabSize(4);
 
@@ -46,6 +51,103 @@ TextEditor::TextEditor(QWidget *parent): QPlainTextEdit(parent) {
     document()->setDefaultTextOption(option);
 
     setTabsAsSpaces(true);
+
+    bracketMismatchFormat = currentCharFormat();
+    bracketMismatchFormat.setBackground(QColor(255, 223, 223));
+
+    bracketMatchFormat = currentCharFormat();
+    bracketMatchFormat.setBackground(QColor(158, 209, 255));
+}
+
+void TextEditor::bracketValidate()
+{
+    validateAndHighlightBrackets('(', ')');
+    validateAndHighlightBrackets('{', '}');
+    validateAndHighlightBrackets('[', ']');
+}
+
+void TextEditor::validateAndHighlightBrackets(const QChar &openStr, const QChar &closeStr)
+{
+    QTextDocument * doc = document();
+
+    if(!brackets.contains(openStr)) {
+        brackets[openStr] = QTextCursor();
+    }
+    if(!brackets.contains(closeStr)) {
+        brackets[closeStr] = QTextCursor();
+    }
+
+    QTextCursor bracketBeginCursor = brackets[openStr];
+    QTextCursor bracketEndCursor = brackets[closeStr];
+
+    if (!bracketBeginCursor.isNull() || !bracketEndCursor.isNull()) {
+        bracketBeginCursor.setCharFormat(QTextCharFormat());
+        bracketEndCursor.setCharFormat(QTextCharFormat());
+        bracketBeginCursor = bracketEndCursor = QTextCursor();
+    }
+
+    QTextCursor cursor = textCursor();
+
+    int position = cursor.position();
+
+    bool forward;
+    QChar begin, end;
+
+    if (doc->characterAt(position) == openStr || doc->characterAt(position - 1) == openStr ||
+        doc->characterAt(position - 1) == closeStr || doc->characterAt(position) == closeStr) {
+
+        forward = doc->characterAt(position) == openStr || doc->characterAt(position - 1) == openStr;
+
+        if (forward) {
+            if(doc->characterAt(position) == openStr) {
+                position++;
+            } else {
+                cursor.setPosition(position - 1);
+            }
+            begin = openStr;
+            end = closeStr;
+        } else {
+            if(doc->characterAt(position) == closeStr) {
+                cursor.setPosition(position + 1);
+                position -= 1;
+            } else {
+                position -= 2;
+            }
+            begin = closeStr;
+            end = openStr;
+        }
+
+        bracketBeginCursor = QTextCursor(cursor);
+        bracketBeginCursor.movePosition(forward ? QTextCursor::NextCharacter : QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor);
+
+        QTextCharFormat format = bracketMismatchFormat;
+
+        int braceDepth = 1;
+
+        QChar c;
+        while (!(c = doc->characterAt(position)).isNull()) {
+            if (c == begin) {
+                braceDepth++;
+            } else if (c == end) {
+                braceDepth--;
+
+                if (!braceDepth) {
+                    bracketEndCursor = QTextCursor(doc);
+                    bracketEndCursor.setPosition(position);
+                    bracketEndCursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+                    bracketEndCursor.setCharFormat(bracketMatchFormat);
+
+                    format = bracketMatchFormat;
+
+                    break;
+                }
+            }
+            forward ? position++ : position--;
+        }
+        bracketBeginCursor.setCharFormat(format);
+    }
+    brackets[openStr] = bracketBeginCursor;
+    brackets[closeStr] = bracketEndCursor;
 }
 
 void TextEditor::setTabsAsSpaces(bool value)

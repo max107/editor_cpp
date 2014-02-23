@@ -10,6 +10,8 @@
 #include <QDebug>
 #include <QApplication>
 
+#include <QVector>
+#include <QMap>
 #include <QScrollBar>
 #include <QAbstractItemView>
 #include <QStringListModel>
@@ -38,6 +40,11 @@ public:
     long long Size;
     long long Counter;
 
+    QMap<QChar, QTextCursor> brackets;
+
+    QTextCharFormat bracketMismatchFormat;
+    QTextCharFormat bracketMatchFormat;
+
     int tabStopCount;
     bool tabsAsSpaces;
     void setTabsAsSpaces(bool value);
@@ -60,6 +67,7 @@ public:
     void goToLine(int lineNumber);
     bool NextCharacterIs(QTextCursor &cursor, const QString &str);
     void smartText(QKeyEvent *e);
+    void validateAndHighlightBrackets(const QChar &openStr, const QChar &closeStr);
 public slots:
     // Saving functions
     bool MaybeSave();
@@ -86,6 +94,7 @@ public slots:
     QString CalculateSize();
 
     void updateCompleterModel();
+    void bracketValidate();
 signals:
     void requestUpdateTitle();
 
