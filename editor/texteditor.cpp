@@ -597,6 +597,7 @@ void TextEditor::keyPressEvent(QKeyEvent *e) {
     bool isShortcut = ((e->modifiers() & Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
     if (!c || !isShortcut) { // do not process the shortcut when we have a completer
         smartText(e);
+        bracketValidate();
     }
 
     const bool ctrlOrShift = e->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier);
