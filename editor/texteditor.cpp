@@ -491,14 +491,10 @@ void TextEditor::goToLine(int lineNumber)
     */
 }
 
-bool TextEditor::NextCharacterIs(QTextCursor & cursor, const QString & str)
-{
-    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
-    return cursor.selectedText() == str;
-}
-
 void TextEditor::smartText(QKeyEvent *e)
 {
+    bool parentEvent = true;
+    QTextDocument * doc = document();
     if(e->key() == Qt::Key_Tab) {
         e->accept();
         insertSmartTab();
@@ -515,10 +511,14 @@ void TextEditor::smartText(QKeyEvent *e)
     QTextCursor cursor = textCursor();
     int position = cursor.position();
 
-    if(e->key() == Qt::Key_ParenRight && NextCharacterIs(cursor, ")")) {
+    if(cursor.selectedText() != "") {
+        position = cursor.selectionStart();
+    }
+
+    if(e->key() == Qt::Key_ParenRight && doc->characterAt(position) == ')') {
         cursor.setPosition(position + 1);
         setTextCursor(cursor);
-        return;
+        parentEvent = false;
     }
 
     if (e->key() == Qt::Key_ParenLeft) {
@@ -527,10 +527,10 @@ void TextEditor::smartText(QKeyEvent *e)
         setTextCursor(cursor);
     }
 
-    if(e->key() == Qt::Key_BracketRight && NextCharacterIs(cursor, "]")) {
+    if(e->key() == Qt::Key_BracketRight && doc->characterAt(position) == ']') {
         cursor.setPosition(position + 1);
         setTextCursor(cursor);
-        return;
+        parentEvent = false;
     }
 
     if (e->key() == Qt::Key_BracketLeft) {
@@ -539,43 +539,41 @@ void TextEditor::smartText(QKeyEvent *e)
         setTextCursor(cursor);
     }
 
-    if(e->key() == Qt::Key_BraceRight && NextCharacterIs(cursor, "}")) {
+    if(e->key() == Qt::Key_BraceRight && doc->characterAt(position) == '}') {
         cursor.setPosition(position + 1);
         setTextCursor(cursor);
-        return;
+        parentEvent = false;
     }
 
-    if (e->key() == Qt::Key_BraceLeft) {
+    if(e->key() == Qt::Key_BraceLeft) {
         cursor.insertText("}");
         cursor.setPosition(position);
         setTextCursor(cursor);
     }
 
-    if(e->key() == Qt::Key_QuoteDbl && NextCharacterIs(cursor, "\"")) {
+    if(e->key() == Qt::Key_QuoteDbl && doc->characterAt(position) == '"') {
         cursor.setPosition(position + 1);
         setTextCursor(cursor);
-        return;
-    }
-
-    if (e->key() == Qt::Key_QuoteDbl) {
+        parentEvent = false;
+    } else if (e->key() == Qt::Key_QuoteDbl) {
         cursor.insertText("\"");
         cursor.setPosition(position);
         setTextCursor(cursor);
     }
 
-    if(e->key() == Qt::Key_Apostrophe && NextCharacterIs(cursor, "'")) {
+    if(e->key() == Qt::Key_Apostrophe && doc->characterAt(position) == '\'') {
         cursor.setPosition(position + 1);
         setTextCursor(cursor);
-        return;
-    }
-
-    if (e->key() == Qt::Key_Apostrophe) {
+        parentEvent = false;
+    } else if (e->key() == Qt::Key_Apostrophe) {
         cursor.insertText("'");
         cursor.setPosition(position);
         setTextCursor(cursor);
     }
 
-    QPlainTextEdit::keyPressEvent(e);
+    if(parentEvent) {
+        QPlainTextEdit::keyPressEvent(e);
+    }
 }
 
 void TextEditor::keyPressEvent(QKeyEvent *e) {

@@ -65,7 +65,6 @@ public:
     QString rstrip(const QString &str);
     void insertSmartTab();
     void goToLine(int lineNumber);
-    bool NextCharacterIs(QTextCursor &cursor, const QString &str);
     void smartText(QKeyEvent *e);
     void validateAndHighlightBrackets(const QChar &openStr, const QChar &closeStr);
 public slots:
