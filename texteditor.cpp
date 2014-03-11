@@ -127,7 +127,8 @@ void TextEditor::OpenFile(const QString FileLocation) {
             c->setCompletionMode(QCompleter::PopupCompletion);
             c->setCaseSensitivity(Qt::CaseInsensitive);
             c->setWrapAround(false);
-            c->setWidget(this);
+            c->setWidget(this); 
+            c->popup()->setObjectName("autocomplete");
 
             QObject::connect(c, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
 

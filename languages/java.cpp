@@ -1,4 +1,4 @@
-#include "highlighter.h"
+#include "../highlighter.h"
 
 void Highlighter::setJava() {
     // Keywords

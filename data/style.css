@@ -12,6 +12,8 @@ QTabWidget::tab-bar {
 
 TextEditor {
 	border: none;
+	font-size: 12px;
+	font-family: Consolas, Courier;
 }
 
 #tabs::pane {
@@ -29,12 +31,22 @@ QTabWidget {
     border: none;
 }
 
+#tabs QTabBar::tab {
+    padding: 8px 12px;
+    background-color: #fff;
+    border-color:  transparent;
+    border-style: solid;
+    border-width: 1px;
+	color: #999;
+}
+
 #tabs QTabBar::tab:selected {
     padding: 8px 12px;
     background-color: #fff;
     border-color: transparent #D1D1D4;
     border-style: solid;
     border-width: 1px;
+	color: #000;
 }
 
 #statusBar {
@@ -72,4 +84,39 @@ QTabWidget {
 
 #sidebarTabs QTabBar::tab {
     border: none;
+}
+
+QScrollBar {
+     border: none;
+     background-color: transparent;
+     height: 6px;
+     width: 10px;
+     margin: 0;
+}
+
+QScrollBar::handle {
+     min-width: 20px;
+     min-height: 20px;
+}
+
+QScrollBar::handle {
+	background-color: #ccc;
+}
+
+QScrollBar::add-line,  QScrollBar::sub-line {
+    background: none;
+     border: none;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+     background: none;
+}
+
+QAbstractItemView[objectName="autocomplete"] {
+	border: none;
+	color: #fff;
+	margin: 4px 0;
+	background-color: #3d3d3d;
+	padding: 2px 4px;
+	min-width: 120px;
 }

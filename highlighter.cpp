@@ -71,7 +71,7 @@ void Highlighter::setColor() {
     singleLineCommentFormat.setForeground(Shared::Comments);
 
     functionsFormat.setFontItalic(true);
-    keywordFormat.setFontWeight(QFont::Bold);
+    // keywordFormat.setFontWeight(QFont::Bold);
 
     setLanguage(SelectedLanguage);
 }

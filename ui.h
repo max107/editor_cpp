@@ -1,6 +1,7 @@
 #ifndef UI_H
 #define UI_H
 
+#include <QTreeWidgetItem>
 #include <QtCore/QVariant>
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
@@ -40,9 +41,9 @@ public:
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
         }
         //specify a new font.
-        QFont newFont("Lucida Grande", 12, QFont::Normal, false);
+        // QFont newFont("Lucida Grande", 12, QFont::Normal, false);
         //set font of application
-        QApplication::setFont(newFont);
+        // QApplication::setFont(newFont);
         MainWindow->setMinimumSize(350, 200);
 
         MainWindow->resize(720, 460);
@@ -75,8 +76,8 @@ public:
         central->setLayout(layout);
         MainWindow->setCentralWidget(central);
 
-//        setupDarkTheme();
-//        setupStyle();
+        // setupDarkTheme();
+        setupStyle();
 
         retranslateUi(MainWindow);
 
@@ -159,11 +160,14 @@ public:
 
     void setupStyle()
     {
-        QFile styleFile("/Volumes/mac/Users/max/test/data/style.css");
+        QFile styleFile("d:\\projects\\editor_cpp\\data\\style.css");
+        // QFile styleFile("/Volumes/mac/Users/max/test/data/style.css");
         if (styleFile.open(QIODevice::ReadOnly)) {
             QByteArray bytes = styleFile.readAll();
             // QApplication *app = (QApplication*)QApplication::instance();
             qApp->setStyleSheet(bytes);
+        } else {
+            qDebug() << "File not found or not readable";
         }
     }
 
